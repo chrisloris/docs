@@ -347,7 +347,7 @@ codes in the 500 range indicate failure within Spark's server infrastructure.
 
 403 Forbidden - Your access token is not authorized to interface with this Core.
 
-404 Not Found - The Core you requested is not currently connected to the cloud.
+404 Not Found - The Core you requested is not currently connected to the cloud.  This error will also be returned when the requested variable or function does not exist on the target Core.
 
 408 Timed Out - The cloud experienced a significant delay when trying to reach the Core.
 
