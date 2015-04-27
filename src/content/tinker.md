@@ -1,7 +1,7 @@
 ---
 word: Tinker
 title: Tinker
-order: 9
+order: 11
 ---
 
 Tinkering with "Tinker"

@@ -1,7 +1,7 @@
 ---
 word: Javascript
 title: Javascript SDK
-order: 6
+order: 8
 ---
 
 # sparkjs
@@ -37,7 +37,7 @@ $ bower install spark
 Alternately, you can pull in SparkJS from the JSDelivr and simply include the script in your HTML.
 
 ```html
-<script type="text/javascript" src="//cdn.jsdelivr.net/sparkjs/0.2.0/spark.min.js">
+<script type="text/javascript" src="//cdn.jsdelivr.net/sparkjs/0.4.2/spark.min.js">
 </script>
 ```
 
@@ -58,7 +58,7 @@ Add an empty div with "spark-login" id where you want the "Login to Spark" butto
 Add this script tag to your page to include SparkJS
 
 ```javascript
-<script src="//cdn.jsdelivr.net/sparkjs/0.2.0/spark.min.js"></script>
+<script src="//cdn.jsdelivr.net/sparkjs/0.4.2/spark.min.js"></script>
 ```
 
 Call `sparkLogin` function with a callback function that will be called on successful login:
@@ -71,7 +71,7 @@ Call `sparkLogin` function with a callback function that will be called on succe
 </script>
 ```
 
-Check out a [complete example here](https://github.com/spark/sparkjs/blob/master/examples/client/index.html)
+Check out a [complete example here](https://github.com/spark/sparkjs/blob/master/examples/client)
 
 ##### Customize styles
 
@@ -242,12 +242,12 @@ devicesPr.then(
 
 ## Device object
 
-You get a list of device instances after calling: `spark.getDevices`,
+You get a list of device instances after calling: `spark.listDevices`,
 if you want to access devices without calling API again, you can use
 `spark.devices`
 
 ```javascript
-spark.listDevices(function(devices) {
+spark.listDevices(function(err, devices) {
   var device = devices[0];
 
   console.log('Device name: ' + device.name);
@@ -256,6 +256,14 @@ spark.listDevices(function(devices) {
   console.log('- functions: ' + device.functions);
   console.log('- version: ' + device.version);
   console.log('- requires upgrade?: ' + device.requiresUpgrade);
+});
+```
+
+You can ask for a specific device by it's id with: `spark.getDevice`
+
+```javascript
+spark.getDevice('DEVICE_ID', function(err, device) {
+  console.log('Device name: ' + device.name);
 });
 ```
 
@@ -439,6 +447,24 @@ device.update(function(data) {
 
 ### Subscribing to events
 
+Subscribe to an specific event (global/device)
+
+```javascript
+//Subscribe to global test event
+spark.onEvent('test', function(data) {
+  console.log("Event: " + data);
+});
+
+//Subscribe to device test event
+spark.listdevices().then(function(devices) {
+  devices[0].onEvent('test', function(data) {
+    console.log("Event: " + data);
+  });
+});
+```
+
+### Get event stream
+
 Get event listener to an stream in the Spark cloud
 
 ```javascript
@@ -456,6 +482,18 @@ spark.getEventStream(false, 'mine', function(data) {
 spark.getEventStream('test', 'CORE_ID', function(data) {
   console.log("Event: " + data);
 });
+```
+
+data is an object with the following properties
+
+```
+{
+  "name":"Uptime",
+  "data":"5:28:54",
+  "ttl":"60",
+  "published_at":"2014-MM-DDTHH:mm:ss.000Z",
+  "coreid":"012345678901234567890123"
+}
 ```
 
 ### Publishing event

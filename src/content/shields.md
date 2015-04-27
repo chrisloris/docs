@@ -1,7 +1,7 @@
 ---
 word: Accessories
 title: Shields and kits
-order: 8
+order: 10
 ---
 
 Shields and accessories
@@ -57,7 +57,7 @@ A1        A1           PWM*, ADC**
 A2        A6           PWM*, ADC**
 
 *  Note: These pins can also function as 3.3V
-         PMW outputs or 3.3V Servo outputs.
+         PWM outputs or 3.3V Servo outputs.
 
 ** Note: ADC inputs are 3.3V max.
 ```
@@ -73,6 +73,8 @@ Relay Shield
 ![Relay Shield Top]({{assets}}/images/relay-shield-top.jpg)
 
 The Relay Shield, in combination with the Spark Core, allows you to control high power devices over the internet. Want to control a lamp, fan or garden sprinklers? Then this is a solution for you!
+
+**IMPORTANT**: This shield provides **regulated power (5v)** to the seated Spark Core and relays. However, it does **not** support power to the devices controlled by the relays.
 
 Operation
 -----
@@ -338,7 +340,7 @@ This LED has four pins, one for each color and a common anode (+) pin.
 
 S9013 is a general purpose small signal NPN [transistor](http://en.wikipedia.org/wiki/Transistor) rated at 40V, 500mA.
 
-You can this transistor to switch small loads like relays, mini motors, buzzers, etc.
+You can use this transistor to switch small loads like relays, mini motors, buzzers, etc.
 
 [Datasheet >](http://www.fairchildsemi.com/ds/SS/SS9013.pdf)
 
@@ -457,7 +459,7 @@ You can use to it detect tilt, orientation or vibrations.
 
 The TMP36 is a low voltage, precision centigrade temperature sensor. It provides a voltage output that is linearly proportional to the Celsius (centigrade) temperature. The TMP36 does not require any external calibration to provide typical accuracies of ±1°C at +25°C and ±2°C over the −40°C to +125°C temperature range.
 
-[Here is an example](http://docs.spark.io/#/examples) of how you could use it the Core.
+[Here is an example](http://docs.spark.io/examples/#measuring-the-temperature) of how you could use it the Core.
 
 [Datasheet >](http://www.analog.com/static/imported-files/data_sheets/TMP35_36_37.pdf)
 
@@ -502,6 +504,8 @@ There are three different value resistor in this kit. All of them are rated at 5
 - 330-Ohm (10)
 - 1K-Ohm (10)
 - 10K-Ohm (10)
+
+You can use this [online guide](http://www.digikey.com/en/resources/conversion-calculators/conversion-calculator-resistor-color-code-4-band) to help identify which resistor is which value.
 
 ### 23. Rotary Potentiometer (1)
 

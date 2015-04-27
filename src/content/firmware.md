@@ -1,4 +1,4 @@
-﻿---
+---
 word: Firmware
 title: Core code (Firmware)
 order: 3
@@ -80,9 +80,11 @@ Currently the application supports the creation of up to 4 different Spark funct
 
 In order to register a Spark function, the user provides the `funcKey`, which is the string name used to make a POST request and a `funcName`, which is the actual name of the function that gets called in the Spark app. The Spark function can return any integer; `-1` is commonly used for a failed function call.
 
-The length of the `funcKey` is limited to a max of 12 characters.
+The length of the `funcKey` is limited to a max of 12 characters. If you declare a function name longer than 12 characters it will be truncated to 12 characters. 
 
-A Spark function is set up to take one argument of the [String](http://arduino.cc/en/Reference/StringObject) datatype. This argument length is limited to a max of 64 characters.
+Example: Spark.function("someFunction1", ...); exposes a function called someFunction and not someFunction1
+
+A Spark function is set up to take one argument of the [String](http://docs.spark.io/firmware/#language-syntax-string-class) datatype. This argument length is limited to a max of 63 characters.
 
 ```cpp
 // EXAMPLE USAGE
@@ -105,9 +107,9 @@ int brewCoffee(String command)
   // look for the matching argument "coffee" <-- max of 64 characters long
   if(command == "coffee")
   {
-    // do something here
-    activateWaterHeater();
-    activateWaterPump();
+    // some example functions you might have
+    //activateWaterHeater();
+    //activateWaterPump();
     return 1;
   }
   else return -1;
@@ -147,6 +149,8 @@ A Core may not publish events beginning with a case-insensitive match for "spark
 Such events are reserved for officially curated data originating from the Spark Cloud.
 
 For the time being there exists no way to access a previously published but TTL-unexpired event.
+
+**NOTE:** Currently, a device can publish at rate of about 1 event/sec, with bursts of up to 4 allowed in 1 second. Back to back burst of 4 messages will take 4 seconds to recover.
 
 ---
 
@@ -257,11 +261,10 @@ Spark.subscribe("the_event_prefix", theHandler, MY_DEVICES);
 
 ---
 
-In the near future, you'll also be able to subscribe to events from a single Core by specifying the Core's ID.
+You are also able to subscribe to events from a single Core by specifying the Core's ID.
 
 ```cpp
 // Subscribe to events published from one Core
-// COMING SOON!
 Spark.subscribe("motion/front-door", motionHandler, "55ff70064989495339432587");
 ```
 
@@ -295,7 +298,7 @@ void loop() {
 
 After you call `Spark.connect()`, your loop will not be called again until the Core finishes connecting to the Cloud. Typically, you can expect a delay of approximately one second.
 
-In most cases, you do not need to call `Spark.connect()`; it is called automatically when the Core turns on. Typically you only need to call `Spark.connect()` after disconnecting with [`Spark.disconnect()`](#spark-disconnect) or when you change the [system mode](#advanced-system-modes).
+In most cases, you do not need to call `Spark.connect()`; it is called automatically when the Core turns on. Typically you only need to call `Spark.connect()` after disconnecting with [`Spark.disconnect()`](#spark-disconnect) or when you change the [system mode](#system-system-modes).
 
 
 ### Spark.disconnect()
@@ -391,123 +394,7 @@ void redundantLoop() {
 }
 ```
 
-`Spark.process()` is a blocking call, and blocks for a few milliseconds. `Spark.process()` is called automatically after every `loop()` and during delays. Typically you will not need to call `Spark.process()` unless you block in some other way and need to maintain the connection to the Cloud, or you change the [system mode](#advanced-system-modes). If the user puts the Core into `MANUAL` mode, the user is responsible for calling `Spark.process()`. The more frequently this function is called, the more responsive the Core will be to incoming messages, the more likely the Cloud connection will stay open, and the less likely that the CC3000's buffer will overrun.
-
-
-
-### Spark.deviceID()
-
-`Spark.deviceID()` provides an easy way to extract the device ID of your Core. It returns a [String object](#data-types-string-object) of the device ID, which is used frequently in Sparkland to identify your Core.
-
-```cpp
-// EXAMPLE USAGE
-
-void setup()
-{
-  // Make sure your Serial Terminal app is closed before powering your Core
-  Serial.begin(9600);
-  // Now open your Serial Terminal, and hit any key to continue!
-  while(!Serial.available()) Spark.process();
-
-  String myID = Spark.deviceID();
-  // Prints out the device ID over Serial
-  Serial.println(myID);
-}
-
-void loop() {}
-```
-
-### Spark.sleep()
-
-`Spark.sleep()` can be used to dramatically improve the battery life of a Spark-powered project by temporarily deactivating the Wi-Fi module, which is by far the biggest power draw.
-
-```C++
-// SYNTAX
-Spark.sleep(int seconds);
-```
-
-```C++
-// EXAMPLE USAGE: Put the Wi-Fi module in standbly (low power) for 5 seconds
-Spark.sleep(5);
-// The Core LED will flash green during sleep
-```
-`Spark.sleep(int seconds)` does NOT stop the execution of user code (non-blocking call).  User code will continue running while the Wi-Fi module is in standby mode. During sleep, WiFi.status() will return WIFI_OFF.  Once sleep time has expired and the Wi-FI module attempts reconnection, WiFi.status() will return value WIFI_CONNECTING and WIFI_ON.
-
-`Spark.sleep(SLEEP_MODE_DEEP, int seconds)` can be used to put the entire Core into a *deep sleep* mode. In this particular mode, the Core shuts down the Wi-Fi chipset (CC3000) and puts the microcontroller in a stand-by mode.  When the Core awakens from deep sleep, it will reset the Core and run all user code from the beginning with no values being maintained in memory from before the deep sleep.  As such, it is recommended that deep sleep be called only after all user code has completed.
-
-```C++
-// SYNTAX
-Spark.sleep(SLEEP_MODE_DEEP, int seconds);
-```
-
-```C++
-// EXAMPLE USAGE: Put the Core into deep sleep for 60 seconds
-Spark.sleep(SLEEP_MODE_DEEP,60);
-// The Core LED will shut off during deep sleep
-```
-The Core will automatically *wake up* and reestablish the WiFi connection after the specified number of seconds.
-
-`Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode)` can be used to put the entire Core into a *stop* mode with *wakeup on interrupt*. In this particular mode, the Core shuts down the Wi-Fi chipset (CC3000) and puts the microcontroller in a stop mode with configurable wakeup pin and edge triggered interrupt. When the specific interrupt arrives, the Core awakens from stop mode, it will behave as if the Core is reset and run all user code from the beginning with no values being maintained in memory from before the stop mode. As such, it is recommended that stop mode be called only after all user code has completed.
-It is mandatory to update the *bootloader* (https://github.com/spark/core-firmware/tree/bootloader-patch-update) for proper functioning of this mode.
-
-```C++
-// SYNTAX
-Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode);
-```
-
-```C++
-// EXAMPLE USAGE: Put the Core into stop mode with wakeup using RISING edge interrupt on D0 pin
-Spark.sleep(D0,RISING);
-// The Core LED will shut off during sleep
-```
-
-*Parameters:*
-
-- `wakeUpPin`: the wakeup pin number. supports external interrupts on the following pins:
-    - D0, D1, D2, D3, D4, A0, A1, A3, A4, A5, A6, A7
-- `edgeTriggerMode`: defines when the interrupt should be triggered. Four constants are predefined as valid values:
-    - CHANGE to trigger the interrupt whenever the pin changes value,
-    - RISING to trigger when the pin goes from low to high,
-    - FALLING for when the pin goes from high to low.
-
-`Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long seconds)` can be used to put the entire Core into a *stop* mode with *wakeup on interrupt* or *wakeup after specified seconds*. In this particular mode, the Core shuts down the Wi-Fi chipset (CC3000) and puts the microcontroller in a stop mode with configurable wakeup pin and edge triggered interrupt or wakeup after the specified seconds . When the specific interrupt arrives or upon reaching configured seconds, the Core awakens from stop mode, it will behave as if the Core is reset and run all user code from the beginning with no values being maintained in memory from before the stop mode. As such, it is recommended that stop mode be called only after all user code has completed.
-It is mandatory to update the *bootloader* (https://github.com/spark/core-firmware/tree/bootloader-patch-update) for proper functioning of this mode.
-
-```C++
-// SYNTAX
-Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long seconds);
-```
-
-```C++
-// EXAMPLE USAGE: Put the Core into stop mode with wakeup using RISING edge interrupt on D0 pin or wakeup after 60 seconds whichever comes first
-Spark.sleep(D0,RISING,60);
-// The Core LED will shut off during sleep
-```
-
-*Parameters:*
-
-- `wakeUpPin`: the wakeup pin number. supports external interrupts on the following pins:
-    - D0, D1, D2, D3, D4, A0, A1, A3, A4, A5, A6, A7
-- `edgeTriggerMode`: defines when the interrupt should be triggered. Four constants are predefined as valid values:
-    - CHANGE to trigger the interrupt whenever the pin changes value,
-    - RISING to trigger when the pin goes from low to high,
-    - FALLING for when the pin goes from high to low.
-- `seconds`: wakeup after the specified number of seconds
-
-In *standard sleep mode*, the Core current consumption is in the range of: **30mA to 38mA**
-
-In *deep sleep mode*, the Core current consumption is around: **3.2 μA**
-
-<!--
-Spark.sleep(int millis, array peripherals);
--->
-
-<!--
-`Spark.sleep()` can also take an optional second argument, an `array` of other peripherals to deactivate. Deactivating unused peripherals on the micro-controller can take its power consumption into the micro-amps.
--->
-
-<!-- TO DO -->
-<!-- Add example implementation here -->
+`Spark.process()` is a blocking call, and blocks for a few milliseconds. `Spark.process()` is called automatically after every `loop()` and during delays. Typically you will not need to call `Spark.process()` unless you block in some other way and need to maintain the connection to the Cloud, or you change the [system mode](#system-system-modes). If the user puts the Core into `MANUAL` mode, the user is responsible for calling `Spark.process()`. The more frequently this function is called, the more responsive the Core will be to incoming messages, the more likely the Cloud connection will stay open, and the less likely that the CC3000's buffer will overrun.
 
 ### Spark.syncTime()
 
@@ -529,7 +416,70 @@ void loop() {
 }
 ```
 
+### Get Public IP
 
+Using this feature, the device can programmatically know its own public IP address.
+
+```cpp
+// Open a serial terminal and see the IP address printed out
+void handler(const char *topic, const char *data) {
+    Serial.println("received " + String(topic) + ": " + String(data));
+}
+
+void setup() {
+    Serial.begin(115200);
+    for(int i=0;i<5;i++) {
+        Serial.println("waiting... " + String(5 - i));
+        delay(1000);
+    }
+
+    Spark.subscribe("spark/", handler);
+    Spark.publish("spark/device/ip");
+}
+```
+
+### Get Device name
+
+This gives you the device name that is stored in the cloud,
+
+```cpp
+// Open a serial terminal and see the device name printed out
+void handler(const char *topic, const char *data) {
+    Serial.println("received " + String(topic) + ": " + String(data));
+}
+
+void setup() {
+    Serial.begin(115200);
+    for(int i=0;i<5;i++) {
+        Serial.println("waiting... " + String(5 - i));
+        delay(1000);
+    }
+
+    Spark.subscribe("spark/", handler);
+    Spark.publish("spark/device/name");
+}
+```
+
+### Get Random seed
+
+Grab 40 bytes of randomness from the cloud and {e}n{c}r{y}p{t} away!
+
+```cpp
+void handler(const char *topic, const char *data) {
+    Serial.println("received " + String(topic) + ": " + String(data));
+}
+
+void setup() {
+    Serial.begin(115200);
+    for(int i=0;i<5;i++) {
+        Serial.println("waiting... " + String(5 - i));
+        delay(1000);
+    }
+
+    Spark.subscribe("spark/", handler);
+    Spark.publish("spark/device/random");
+}
+```
 
 WiFi
 =====
@@ -538,7 +488,7 @@ WiFi
 
 `WiFi.on()` turns on the Wi-Fi module. Useful when you've turned it off, and you changed your mind.
 
-Note that `WiFi.on()` does not need to be called unless you have changed the [system mode](#advanced-system-modes) or you have previously turned the Wi-Fi module off.
+Note that `WiFi.on()` does not need to be called unless you have changed the [system mode](#system-system-modes) or you have previously turned the Wi-Fi module off.
 
 ### WiFi.off()
 
@@ -740,7 +690,7 @@ Write a `HIGH` or a `LOW` value to a digital pin.
 digitalWrite(pin, value);
 ```
 
-If the pin has been configured as an OUTPUT with pinMode(), its voltage will be set to the corresponding value: 3.3V for HIGH, 0V (ground) for LOW.
+If the pin has been configured as an `OUTPUT` with `pinMode()` or if previously used with `analogWrite()`, its voltage will be set to the corresponding value: 3.3V for HIGH, 0V (ground) for LOW.
 
 `digitalWrite()` takes two arguments, `pin`: the number of the pin whose value you wish to set and `value`: `HIGH` or `LOW`.
 
@@ -810,7 +760,7 @@ The analogWrite function has nothing to do with the analog pins or the analogRea
 analogWrite(pin, value);
 ```
 
-`analogWrite()` takes two arguments, `pin`: the number of the pin whose value you wish to set and `value`: the duty cycle: between 0 (always off) and 255 (always on).
+`analogWrite()` takes two arguments, `pin`: the number of the pin whose value you wish to set and `value`: the duty cycle: between 0 (always off) and 255 (always on).  NOTE: `pinMode(pin, OUTPUT);` is required before calling `analogWrite(pin, value);` or else the `pin` will not be initialized as a PWM output and set to the desired duty cycle.
 
 `analogWrite()` does not return anything.
 
@@ -866,6 +816,157 @@ void loop()
 }
 ```
 
+Advanced I/O
+------
+
+### tone()
+
+Generates a square wave of the specified frequency and duration (and 50% duty cycle) on a timer channel pin (D0, D1, A0, A1, A4, A5, A6, A7, RX, TX). Use of the tone() function will interfere with PWM output on the selected pin.
+
+```C++
+// SYNTAX
+tone(pin, frequency, duration)
+```
+
+`tone()` takes three arguments, `pin`: the pin on which to generate the tone, `frequency`: the frequency of the tone in hertz and `duration`: the duration of the tone in milliseconds (a zero value = continuous tone).
+
+`tone()` does not return anything.
+
+```C++
+// EXAMPLE USAGE
+// Plays a melody - Connect small speaker to analog pin A0
+
+int speakerPin = A0;
+
+// notes in the melody:
+int melody[] = {1908,2551,2551,2273,2551,0,2024,1908}; //C4,G3,G3,A3,G3,0,B3,C4
+
+// note durations: 4 = quarter note, 8 = eighth note, etc.:
+int noteDurations[] = {4,8,8,4,4,4,4,4 };
+
+void setup() {
+  // iterate over the notes of the melody:
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+
+    // to calculate the note duration, take one second 
+    // divided by the note type.
+    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    int noteDuration = 1000/noteDurations[thisNote];
+    tone(speakerPin, melody[thisNote],noteDuration);
+
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    // stop the tone playing:
+    noTone(speakerPin);
+  }
+}
+```
+
+### noTone()
+
+Stops the generation of a square wave triggered by tone() on a specified pin (D0, D1, A0, A1, A4, A5, A6, A7, RX, TX). Has no effect if no tone is being generated.
+
+
+```C++
+// SYNTAX
+noTone(pin)
+```
+
+`noTone()` takes one argument, `pin`: the pin on which to stop generating the tone.
+
+`noTone()` does not return anything.
+
+```C++
+//See the tone() example
+```
+
+### shiftOut()
+
+Shifts out a byte of data one bit at a time on a specified pin. Starts from either the most (i.e. the leftmost) or least (rightmost) significant bit. Each bit is written in turn to a data pin, after which a clock pin is pulsed (taken high, then low) to indicate that the bit is available.
+Note: if you're interfacing with a device that's clocked by rising edges, you'll need to make sure that the clock pin is low before the call to shiftOut(), e.g. with a call to digitalWrite(clockPin, LOW).
+This is a software implementation; see also the SPI function, which provides a hardware implementation that is faster but works only on specific pins.
+
+
+```C++
+// SYNTAX
+shiftOut(dataPin, clockPin, bitOrder, value)
+```
+
+`shiftOut()` takes four arguments, 'dataPin': the pin on which to output each bit, `clockPin`: the pin to toggle once the dataPin has been set to the correct value, `bitOrder`: which order to shift out the bits; either MSBFIRST or LSBFIRST (Most Significant Bit First, or, Least Significant Bit First) and `value`: the data (byte) to shift out.
+
+`shiftOut()` does not return anything.
+
+```C++
+// EXAMPLE USAGE
+
+// Use digital pins D0 for data and D1 for clock
+int dataPin = D0;
+int clock = D1;
+
+uint8_t data = 50;
+
+setup() {
+	// Set data and clock pins as OUTPUT pins before using shiftOut()
+	pinMode(dataPin, OUTPUT);
+	pinMode(clock, OUTPUT);
+	
+	// shift out data using MSB first
+	shiftOut(dataPin, clock, MSBFIRST, data);
+
+	// Or do this for LSBFIRST serial
+	shiftOut(dataPin, clock, LSBFIRST, data);  
+}
+
+loop() {
+	// nothing to do
+}
+```
+
+### shiftIn()
+
+Shifts in a byte of data one bit at a time. Starts from either the most (i.e. the leftmost) or least (rightmost) significant bit. For each bit, the clock pin is pulled high, the next bit is read from the data line, and then the clock pin is taken low.
+Note: if you're interfacing with a device that's clocked by rising edges, you'll need to make sure that the clock pin is low before the call to shiftOut(), e.g. with a call to digitalWrite(clockPin, LOW).
+This is a software implementation; see also the SPI function, which provides a hardware implementation that is faster but works only on specific pins.
+
+
+```C++
+// SYNTAX
+shiftIn(dataPin, clockPin, bitOrder)
+```
+
+`shiftIn()` takes three arguments, 'dataPin': the pin on which to input each bit, `clockPin`: the pin to toggle to signal a read from dataPin, `bitOrder`: which order to shift in the bits; either MSBFIRST or LSBFIRST (Most Significant Bit First, or, Least Significant Bit First).
+
+`shiftIn()` returns the byte value read.
+
+
+```C++
+// EXAMPLE USAGE
+
+// Use digital pins D0 for data and D1 for clock
+int dataPin = D0;
+int clock = D1;
+
+uint8_t data;
+
+setup() {
+	// Set data as INPUT and clock pin as OUTPUT before using shiftIn()
+	pinMode(dataPin, INPUT);
+	pinMode(clock, OUTPUT);
+	
+	// shift in data using MSB first
+	data = shiftIn(dataPin, clock, MSBFIRST);
+
+	// Or do this for LSBFIRST serial
+	data = shiftIn(dataPin, clock, LSBFIRST);  
+}
+
+loop() {
+	// nothing to do
+}
+```
+
 
 Communication
 ===
@@ -879,7 +980,7 @@ Used for communication between the Spark Core and a computer or other devices. T
 
 `Serial1:` This channel is available via the Core's TX and RX pins.
 
-`Serial2:` This channel is optionally available via the Core's D1(TX) and D0(RX) pins. To use Serial2, add `#include "Serial2.h"` near the top of your Spark App's main code file.
+`Serial2:` This channel is optionally available via the Core's D1(TX) and D0(RX) pins. To use Serial2, add `#include "Serial2/Serial2.h"` near the top of your Spark App's main code file.
 
 To use the TX/RX (Serial1) or D1/D0 (Serial2) pins to communicate with your personal computer, you will need an additional USB-to-serial adapter. To use them to communicate with an external TTL serial device, connect the TX pin to your device's RX pin, the RX to your device's TX pin, and the ground of your Core to your device's ground.
 
@@ -1203,11 +1304,12 @@ Connect a pull-up resistor(1.5K to 10K) on SDA line. Connect a pull-up resistor(
 
 ### setSpeed()
 
-Sets the I2C clock speed. This is an optional call (not from the original Arduino specs.) and should normally be called once before calling begin().
+Sets the I2C clock speed. This is an optional call (not from the original Arduino specs.) and must be called once before calling begin().  The default I2C clock speed is 100KHz.
 
 ```C++
 // SYNTAX
 Wire.setSpeed(clockSpeed);
+Wire.begin();
 ```
 
 Parameters: 
@@ -1216,16 +1318,18 @@ Parameters:
 
 ### stretchClock()
 
-Enables or Disables I2C clock stretching. This is an optional call (not from the original Arduino specs.).
+Enables or Disables I2C clock stretching. This is an optional call (not from the original Arduino specs.) and must be called once before calling begin(). The default I2C stretch mode is disabled.
 
 ```C++
 // SYNTAX
 Wire.stretchClock(stretch);
+Wire.begin();
 ```
 
 Parameters: 
 
 - `stretch`: boolean. true will enable clock stretching. false will disable clock stretching.
+
 
 ### begin()
 
@@ -1457,7 +1561,7 @@ IPAddress
 -----
 ### IPAddress
 
-Creates an IP address that can be used with TCPServer, TCPClient, UPD, and Network objects.
+Creates an IP address that can be used with TCPServer, TCPClient, and UDP objects.
 
 ```C++
 // EXAMPLE USAGE
@@ -1481,14 +1585,14 @@ You can also use indexing the get or change individual bytes in the IP address.
 
 ```C++
 // PING ALL HOSTS ON YOUR SUBNET EXCEPT YOURSELF
-IPAddress localIP = Network.localIP();
+IPAddress localIP = WiFi.localIP();
 uint8_t myLastAddrByte = localIP[3];
 for(uint8_t ipRange=1; ipRange<255; ipRange++)
 {
   if (ipRange != myLastAddrByte)
   {
     localIP[3] = ipRange;
-    Network.ping(localIP);
+    WiFi.ping(localIP);
   }
 }
 ```
@@ -1508,7 +1612,7 @@ Finally IPAddress can be used directly with print.
 ```C++
 // PRINT THE CORE'S IP ADDRESS IN
 // THE FORMAT 192.168.0.10
-IPAddress myIP = Network.localIP();
+IPAddress myIP = WiFi.localIP();
 Serial.println(myIP);    // prints the core's IP address
 ```
 
@@ -1542,10 +1646,10 @@ void setup()
   // Now open your Serial Terminal, and hit any key to continue!
   while(!Serial.available()) SPARK_WLAN_Loop();
 
-  Serial.println(Network.localIP());
-  Serial.println(Network.subnetMask());
-  Serial.println(Network.gatewayIP());
-  Serial.println(Network.SSID());
+  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.subnetMask());
+  Serial.println(WiFi.gatewayIP());
+  Serial.println(WiFi.SSID());
 }
 
 void loop()
@@ -1839,7 +1943,7 @@ void setup() {
 
   // Print your device IP Address via serial
   Serial.begin(9600);
-  Serial.println(Network.localIP());
+  Serial.println(WiFi.localIP());
 }
 
 void loop() {
@@ -1975,7 +2079,7 @@ Parameters: NONE
 
 ### remoteIP()
 
-Gets the IP address of the remote connection. This function must be called after `UDP.parsePacket()`.
+Returns the IP address of sender of the packet parsed by `UDP.parsePacket()`.
 
 ```cpp
 // SYNTAX
@@ -1985,12 +2089,12 @@ Parameters: NONE
 
 Returns:
 
- - 4 bytes : the IP address of the remote connection
+ - 4 bytes : the IP address of the sender of the packet parsed by `UDP.parsePacket()`.
 
 
 ### remotePort()
 
-Gets the port of the remote UDP connection. This function must be called after `UDP.parsePacket()`.
+Returns the port from which the UDP packet was sent. The packet is the one most recently processed by  UDP.parsePacket()`.
 
 ```cpp
 // SYNTAX
@@ -2000,7 +2104,7 @@ Parameters: NONE
 
 Returns:
 
-- `int`: the port of the UDP connection to a remote host
+- `int`: the port from which the packet parsed by `UDP.parsePacket()` was sent.
 
 Libraries
 =====
@@ -2402,7 +2506,7 @@ The Spark Core will remember this offset until reboot.
 
 ```cpp
 // Set time zone to Eastern USA daylight saving time
-Time.zone(-5);
+Time.zone(-4);
 ```
 
 Parameters: floating point offset from UTC in hours, from -12.0 to 13.0
@@ -2835,11 +2939,102 @@ Calculates the square root of a number.
 
 The function returns the number's square root *(double)*
 
+## Random Numbers
+
+The firmware incorporates a pseudo-random number generator. 
+
+### random()
+
+Retrieves the next random value, restricted to a given range. 
+
+ `random(max);`
+
+Parameters
+
+- `max` - the upper limit of the random number to retrieve.
+
+Returns: a random value between 0 and up to, but not including `max`. 
+
+```c++
+int r = random(10);
+// r is >= 0 and < 10
+// The smallest value returned is 0
+// The largest value returned is 9
+```
+
+ NB: When `max` is 0, the result is always 0.
+
+---
+
+`random(min,max);`
+
+Parameters: 
+
+ - `min` - the lower limit (inclusive) of the random number to retrieve.
+ - `max` - the upper limit (exclusive) of the random number to retrieve.
+
+Returns: a random value from `min` and up to, but not including `max`. 
+
+  
+```c++
+int r = random(10, 100);
+// r is >= 10 and < 100
+// The smallest value returned is 10
+// The largest value returned is 99
+```
+
+  NB: If `min` is greater or equal to `max`, the result is always 0. 
+
+### randomSeed()
+
+`randomSeed(newSeed);`
+
+Parameters:
+ 
+ - `newSeed` - the new random seed
+
+The pseudorandom numbers produced by the firmware are derived from a single value - the random seed. 
+The value of this seed fully determines the sequence of random numbers produced by successive
+calls to `random()`. Using the same seed on two separate runs will produce
+the same sequence of random numbers, and in contrast, using different seeds 
+will produce a different sequence of random numbers.
+
+On startup, the default random seed is [set by the system](http://www.cplusplus.com/reference/cstdlib/srand/) to 1.
+Unless the seed is modified, the same sequence of random numbers would be produced each time
+the system starts. 
+
+Fortunately, when the core connects to the cloud, it receives a very randomized seed value,
+which is used as the random seed. So you can be sure the random numbers produced
+will be different each time your program is run.
+
+
+*** Disable random seed from the cloud ***
+
+When the core receives a new random seed from the cloud, it's passed to this function:
+
+```
+void random_seed_from_cloud(unsigned int seed);
+```
+
+The system implementation of this function calls `randomSeed()` to set
+the new seed value. If you don't wish to use random seed values from the cloud, 
+you can take control of the ransom seeds set by adding this code to your app:
+
+```cpp
+void random_seed_from_cloud(unsigned int seed) {
+   // don't do anything with this. Continue with existing seed.
+}
+```
+
+In the example, the seed is simply ignored, so the system will continue using
+whatever seed was previously set. In this case, the random seed will not be set 
+from the cloud, and setting the seed is left to up you.
+
 
 EEPROM
 ----
 
-The EEPROM emulator allocates 100 bytes of the Spark Core's built-in flash memory to act as EEPROM. Unlike "true EEPROM, flash doesn't suffer from write "wear".  The EEPROM functions can be used to store small amounts of data in flash that will persist even after the Core resets after a deep sleep.
+The EEPROM emulator allocates 100 bytes of the Spark Core's built-in flash memory to act as EEPROM. Unlike "true" EEPROM, flash doesn't suffer from write "wear".  The EEPROM functions can be used to store small amounts of data in flash that will persist even after the Core resets after a deep sleep.
 
 
 ### read()
@@ -2872,15 +3067,18 @@ uint8_t val = 0x45;
 EEPROM.write(addr, val);
 ```
 
-Advanced: System Modes
+System
 =====
+
+System modes
+----
 
 By default, the Spark Core connects to the Cloud and processes messages automatically. However there are many cases where a user will want to take control over that connection. There are three available system modes: `AUTOMATIC`, `SEMI_AUTOMATIC`, and `MANUAL`. These modes describe how connectivity is handled.
 
 System modes must be called before the setup() function. By default, the Core is always in `AUTOMATIC` mode.
 
-Automatic mode
-----
+### Automatic mode
+
 
 The automatic mode of connectivity provides the default behavior of the Spark Core, which is that:
 
@@ -2906,8 +3104,8 @@ void loop() {
 
 In automatic mode, the user can still call `Spark.disconnect()` to disconnect from the Cloud, but is then responsible for re-connecting to the Cloud by calling `Spark.connect()`.
 
-Semi-automatic mode
-----
+### Semi-automatic mode
+
 
 The semi-automatic mode will not attempt to connect the Core to the Cloud automatically. However once the Core is connected to the Cloud (through some user intervention), messages will be processed automatically, as in the automatic mode above.
 
@@ -2932,8 +3130,8 @@ The semi-automatic mode is therefore much like the automatic mode, except:
 - When the Core boots up, the user code will begin running immediately.
 - When the user calls [`Spark.connect()`](#spark-connect), the user code will be blocked, and the Core will attempt to negotiate a connection. This connection will block until either the Core connects to the Cloud or an interrupt is fired that calls [`Spark.disconnect()`](#spark-disconnect).
 
-Manual mode
-----
+### Manual mode
+
 
 The "manual" mode puts the Spark Core's connectivity completely in the user's control. This means that the user is responsible for both establishing a connection to the Spark Cloud and handling communications with the Cloud by calling [`Spark.process()`](#spark-process) on a regular basis.
 
@@ -2961,6 +3159,167 @@ When using manual mode:
 - Once the user calls [`Spark.connect()`](#spark-connect), the Core will attempt to begin the connection process.
 - Once the Core is connected to the Cloud ([`Spark.connected()`](#spark-connected)` == true`), the user must call `Spark.process()` regularly to handle incoming messages and keep the connection alive. The more frequently `Spark.process()` is called, the more responsive the Core will be to incoming messages.
 - If `Spark.process()` is called less frequently than every 20 seconds, the connection with the Cloud will die. It may take a couple of additional calls of `Spark.process()` for the Core to recognize that the connection has been lost.
+
+System.factoryReset()
+----
+
+This will perform a factory reset and do the following:
+
+- Restore factory reset firmware from external flash (tinker)
+- Erase WiFi profiles
+- Enter Listening mode upon completion
+
+```cpp
+System.factoryReset()
+```
+
+System.bootloader()
+----
+
+
+The device will enter DFU-mode and boot up in DFU when a reset occurs until a user firmware is uploaded via DFU-util.
+
+```cpp
+System.bootloader()
+```
+
+Spark.deviceID()
+----
+
+`Spark.deviceID()` provides an easy way to extract the device ID of your Core. It returns a [String object](#data-types-string-object) of the device ID, which is used frequently in Sparkland to identify your Core.
+
+```cpp
+// EXAMPLE USAGE
+
+void setup()
+{
+  // Make sure your Serial Terminal app is closed before powering your Core
+  Serial.begin(9600);
+  // Now open your Serial Terminal, and hit any key to continue!
+  while(!Serial.available()) Spark.process();
+
+  String myID = Spark.deviceID();
+  // Prints out the device ID over Serial
+  Serial.println(myID);
+}
+
+void loop() {}
+```
+
+Spark.sleep()
+----
+
+`Spark.sleep()` can be used to dramatically improve the battery life of a Spark-powered project by temporarily deactivating the Wi-Fi module, which is by far the biggest power draw.
+
+```C++
+// SYNTAX
+Spark.sleep(int seconds);
+```
+
+```C++
+// EXAMPLE USAGE: Put the Wi-Fi module in standby (low power) for 5 seconds
+Spark.sleep(5);
+// The Core LED will flash green during sleep
+```
+`Spark.sleep(int seconds)` does NOT stop the execution of user code (non-blocking call).  User code will continue running while the Wi-Fi module is in standby mode. During sleep, WiFi.status() will return WIFI_OFF.  Once sleep time has expired and the Wi-FI module attempts reconnection, WiFi.status() will return value WIFI_CONNECTING and WIFI_ON.
+
+`Spark.sleep(SLEEP_MODE_DEEP, int seconds)` can be used to put the entire Core into a *deep sleep* mode. In this particular mode, the Core shuts down the Wi-Fi chipset (CC3000) and puts the microcontroller in a stand-by mode.  When the Core awakens from deep sleep, it will reset the Core and run all user code from the beginning with no values being maintained in memory from before the deep sleep.  As such, it is recommended that deep sleep be called only after all user code has completed. The Standby mode is used to achieve the lowest power consumption.  After entering Standby mode, the SRAM and register contents are lost except for registers in the backup domain.
+
+```C++
+// SYNTAX
+Spark.sleep(SLEEP_MODE_DEEP, int seconds);
+```
+
+```C++
+// EXAMPLE USAGE: Put the Core into deep sleep for 60 seconds
+Spark.sleep(SLEEP_MODE_DEEP,60);
+// The Core LED will shut off during deep sleep
+```
+The Core will automatically *wake up* and reestablish the WiFi connection after the specified number of seconds.
+
+`Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode)` can be used to put the entire Core into a *stop* mode with *wakeup on interrupt*. In this particular mode, the Core shuts down the Wi-Fi chipset (CC3000) and puts the microcontroller in a stop mode with configurable wakeup pin and edge triggered interrupt. When the specific interrupt arrives, the Core awakens from stop mode, it will behave as if the Core is reset and run all user code from the beginning with no values being maintained in memory from before the stop mode. As such, it is recommended that stop mode be called only after all user code has completed. (Note: The new Spark Photon firmware will not reset before going into stop mode so all the application variables are preserved after waking up from this mode. The voltage regulator is put in low-power mode. This mode achieves the lowest power consumption while retaining the contents of SRAM and registers.)
+It is mandatory to update the *bootloader* (https://github.com/spark/core-firmware/tree/bootloader-patch-update) for proper functioning of this mode(valid only for Spark Core).
+
+```C++
+// SYNTAX
+Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode);
+```
+
+```C++
+// EXAMPLE USAGE: Put the Core into stop mode with wakeup using RISING edge interrupt on D0 pin
+Spark.sleep(D0,RISING);
+// The Core LED will shut off during sleep
+```
+
+*Parameters:*
+
+- `wakeUpPin`: the wakeup pin number. supports external interrupts on the following pins:
+    - D0, D1, D2, D3, D4, A0, A1, A3, A4, A5, A6, A7
+- `edgeTriggerMode`: defines when the interrupt should be triggered. Four constants are predefined as valid values:
+    - CHANGE to trigger the interrupt whenever the pin changes value,
+    - RISING to trigger when the pin goes from low to high,
+    - FALLING for when the pin goes from high to low.
+
+`Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long seconds)` can be used to put the entire Core into a *stop* mode with *wakeup on interrupt* or *wakeup after specified seconds*. In this particular mode, the Core shuts down the Wi-Fi chipset (CC3000) and puts the microcontroller in a stop mode with configurable wakeup pin and edge triggered interrupt or wakeup after the specified seconds . When the specific interrupt arrives or upon reaching configured seconds, the Core awakens from stop mode, it will behave as if the Core is reset and run all user code from the beginning with no values being maintained in memory from before the stop mode. As such, it is recommended that stop mode be called only after all user code has completed. (Note: The new Spark Photon firmware will not reset before going into stop mode so all the application variables are preserved after waking up from this mode. The voltage regulator is put in low-power mode. This mode achieves the lowest power consumption while retaining the contents of SRAM and registers.)
+
+It is mandatory to update the *bootloader* (https://github.com/spark/core-firmware/tree/bootloader-patch-update) for proper functioning of this mode(valid only for Spark Core).
+
+```C++
+// SYNTAX
+Spark.sleep(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long seconds);
+```
+
+```C++
+// EXAMPLE USAGE: Put the Core into stop mode with wakeup using RISING edge interrupt on D0 pin or wakeup after 60 seconds whichever comes first
+Spark.sleep(D0,RISING,60);
+// The Core LED will shut off during sleep
+```
+
+*Parameters:*
+
+- `wakeUpPin`: the wakeup pin number. supports external interrupts on the following pins:
+    - D0, D1, D2, D3, D4, A0, A1, A3, A4, A5, A6, A7
+- `edgeTriggerMode`: defines when the interrupt should be triggered. Four constants are predefined as valid values:
+    - CHANGE to trigger the interrupt whenever the pin changes value,
+    - RISING to trigger when the pin goes from low to high,
+    - FALLING for when the pin goes from high to low.
+- `seconds`: wakeup after the specified number of seconds
+
+In *standard sleep mode*, the Core current consumption is in the range of: **30mA to 38mA**
+
+In *deep sleep mode*, the Core current consumption is around: **3.2 μA**
+
+<!--
+Spark.sleep(int millis, array peripherals);
+-->
+
+<!--
+`Spark.sleep()` can also take an optional second argument, an `array` of other peripherals to deactivate. Deactivating unused peripherals on the micro-controller can take its power consumption into the micro-amps.
+-->
+
+<!-- TO DO -->
+<!-- Add example implementation here -->
+
+System.reset()
+----
+
+Resets the device, just like hitting the reset button or powering down and back up.
+
+```C++
+uint32_t lastReset = 0;
+
+void setup() {
+    lastReset = millis();
+}
+
+void loop() {
+  // Reset after 5 minutes of operation
+  // ==================================
+  if (millis() - lastReset > 5*60000UL) {
+    System.reset();
+  }
+}
+```
 
 
 Language Syntax
@@ -4007,19 +4366,19 @@ Returns:
 
 ### concat()
 
-Combines, or *concatenates* two strings into one new String. The second string is appended to the first, and the result is placed in a new String.
+Combines, or *concatenates* two strings into one string. The second string is appended to the first, and the result is placed in the original string.
 
 ```
 SYNTAX:
 
-string.concat(string, string2)
+string.concat(string2)
 ```
 
 Parameters:
 
   * string, string2: variables of type String
 
-Returns: new String that is the combination of the original two Strings
+Returns: None
 
 ### endsWith()
 
@@ -4160,11 +4519,11 @@ string.replace(substring1, substring2)
 
 Parameters:
 
-  * string: a variable of type String
-  * substring1: another variable of type String
-  * substring2: another variable of type String
+  * string: the string which will be modified - a variable of type String
+  * substring1: searched for - another variable of type String (single or multi-character), char or const char (single character only)
+  * substring2: replaced with - another variable of type String (signle or multi-character), char or const char (single character only)
 
-Returns: another String containing the new string with replaced characters.
+Returns: None
 
 ### reserve()
 

@@ -22,10 +22,10 @@ Congratulations on being the owner of a brand new Spark Core! Go ahead, open the
 
 ![Power the Core]({{assets}}/images/core-usb.jpg)
 
-Plug the included USB cable into the Spark Core and your computer. The Core should start blinking blue.  [Have one of these u.FL connectors?](/#/hardware#spark-core-datasheet-types-of-cores) Make sure you connect an antenna to it now!
+Plug the included USB cable into the Spark Core and your computer. The Core should start blinking blue.  [Have one of these u.FL connectors?](/hardware#spark-core-datasheet-types-of-cores) Make sure you connect an antenna to it now!
 
 - Not blinking blue?
-- - Maybe it's already been configured. Hold down the MODE button until it starts blinking blue, then continue.
+  - Maybe it's already been configured. Hold down the MODE button until it starts blinking blue, then continue.
 
 
 ### Step 2: Install the App
@@ -58,13 +58,13 @@ This may take a little while- but don't worry. It should go through the followin
 
 Did your phone not find any Cores?
 - Is it blinking blue?
-- - Give it another go.
+  - Give it another go.
 - Is it blinking green and not getting to cyan?
-- - Try it again by holding the MODE button on the core until it begins flashing blue, then double-check your network name and password.
+  - Try it again by holding the MODE button on the core until it begins flashing blue, then double-check your network name and password.
 - Is it now breathing cyan, but the app didn't find any Cores?
-- - Uh oh. Your Core's on the network, but it took too long. [We're going to claim your core manually.](/connect#claiming-your-core)
+  - Uh oh. Your Core's on the network, but it took too long. [We're going to claim your core manually.](/connect#claiming-your-core)
 - Something else altogether?
-- - Give the [Connecting Your Core](/connect) page a read-through and if you're still stuck, search the [community.](http://community.spark.io)
+  - Give the [Connecting Your Core](/connect) page a read-through and if you're still stuck, search the [community.](http://community.spark.io)
 
 
 
@@ -152,7 +152,7 @@ The RGB LED can also let you know if there were errors in establishing an intern
 
 The Core has 24 pins that you can connect a circuit to. These pins are:
 
-- _VIN_: Connect an unregulated power source here with a voltage between 3.6V and 6V to power the Core. If you're powering the Core over USB, this pin should *not* be used.
+- _VIN_: To power the Core off an unregulated power source with a voltage between 3.6V and 6V, or, if you're powering the Core over USB, this pin can be used as 5V V~OUT~ to power external components. In this case consider the current limitation imposed by your USB power source (e.g. max. 500mA for standard USB 2.0 ports). *Avoid powering the Core via USB and V~IN~ concurrently*.
 - _3V3_: This pin will output a regulated 3.3V power rail that can be used to power any components outside the Core. (Also, if you have your own 3.3V regulated power source, you can plug it in here to power the Core).
 - _3V3*_: This is a separate low-noise regulated 3.3V power rail designed for analog circuitry that may be susceptible to noise from the digital components. If you're using any sensitive analog sensors, power them from _3V3*_ instead of from _3V3_.
 - _!RST_: You can reset the Core (same as pressing the RESET button) by connecting this pin to GND.
