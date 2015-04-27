@@ -340,14 +340,15 @@ codes in the 500 range indicate failure within Spark's server infrastructure.
 ```
 200 OK - API call successfully delivered to the Core and executed.
 
-400 Bad Request - Your request is not understood by the Core,
-    or the requested subresource (variable/function) has not been exposed.
+400 Bad Request - Your request is not understood by the Core.
 
 401 Unauthorized - Your access token is not valid.
 
 403 Forbidden - Your access token is not authorized to interface with this Core.
 
-404 Not Found - The Core you requested is not currently connected to the cloud.  This error will also be returned when the requested variable or function does not exist on the target Core.
+404 Not Found - The Core you requested is not currently connected to the cloud.  
+    This error is also returned when the requested subresource (variable/function)
+    has not been exposed.
 
 408 Timed Out - The cloud experienced a significant delay when trying to reach the Core.
 
